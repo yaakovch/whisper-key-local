@@ -127,7 +127,8 @@ class WhisperEngine:
     
 
     def transcribe_audio(self,
-                         audio_data: np.ndarray) -> Optional[str]:
+                         audio_data: np.ndarray,
+                         language_override: Optional[str] = None) -> Optional[str]:
         if self.model is None:
             return None
         
@@ -152,10 +153,12 @@ class WhisperEngine:
             
             audio_data = audio_data.astype(np.float32)
             
+            effective_language = language_override if language_override is not None else self.language
+
             segments, info = self.model.transcribe(
                 audio_data,
                 beam_size=self.beam_size,
-                language=self.language,
+                language=effective_language,
                 condition_on_previous_text=False 
             )
             

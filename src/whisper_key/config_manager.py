@@ -368,6 +368,7 @@ class ConfigValidator:
         self.default_config = default_config
         
         self._validate_enum('whisper.device', ['cpu', 'cuda'])
+        self._validate_boolean('whisper.sync_with_windows_language')
         
         self._validate_enum('audio.channels', [1, 2])       
         self._validate_audio_host()

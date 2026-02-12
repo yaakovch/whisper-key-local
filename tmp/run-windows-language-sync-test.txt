@@ -1,0 +1,19 @@
+Windows PowerShell copy/paste commands
+
+1) Open PowerShell and run:
+
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+cd \\wsl$\Ubuntu\home\yaako\projects\whisper-key-yaakov\tmp
+.\windows-language-sync-test.ps1 -RepoPath \\wsl$\Ubuntu\home\yaako\projects\whisper-key-yaakov -Device cuda
+
+2) If Whisper Key is already running and you do not want auto-launch:
+
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+cd \\wsl$\Ubuntu\home\yaako\projects\whisper-key-yaakov\tmp
+.\windows-language-sync-test.ps1 -RepoPath \\wsl$\Ubuntu\home\yaako\projects\whisper-key-yaakov -Device cuda -SkipLaunch
+
+3) Optional CPU mode:
+
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+cd \\wsl$\Ubuntu\home\yaako\projects\whisper-key-yaakov\tmp
+.\windows-language-sync-test.ps1 -RepoPath \\wsl$\Ubuntu\home\yaako\projects\whisper-key-yaakov -Device cpu

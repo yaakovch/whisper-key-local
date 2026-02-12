@@ -129,8 +129,26 @@ class ModelDefinition:
         self.group = config.get("group", "custom")
         self.enabled = config.get("enabled", True)
         self.files = config.get("files", {})
+        self.english_only = self._derive_english_only(config)
         self.is_local_path = self._check_is_local_path()
         self.cache_folder = self._derive_cache_folder()
+
+    def _derive_english_only(self, config: dict) -> bool:
+        explicit_value = config.get("english_only")
+        if isinstance(explicit_value, bool):
+            return explicit_value
+
+        key_lower = (self.key or "").lower()
+        source_lower = (self.source or "").lower()
+        label_lower = (self.label or "").lower()
+
+        if key_lower.endswith(".en"):
+            return True
+        if ".en" in source_lower:
+            return True
+        if "english" in label_lower:
+            return True
+        return False
 
     def _check_is_local_path(self) -> bool:
         if self.source.startswith("\\\\") or (len(self.source) > 2 and self.source[1] == ":"):

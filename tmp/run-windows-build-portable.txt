@@ -1,0 +1,19 @@
+Windows PowerShell copy/paste commands
+
+1) Build default CUDA portable app (with zip):
+
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+cd \\wsl$\Ubuntu\home\yaako\projects\whisper-key-yaakov\tmp
+.\windows-build-portable.ps1 -RepoPath \\wsl$\Ubuntu\home\yaako\projects\whisper-key-yaakov -Variant cuda
+
+2) Build ROCm portable app (with zip):
+
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+cd \\wsl$\Ubuntu\home\yaako\projects\whisper-key-yaakov\tmp
+.\windows-build-portable.ps1 -RepoPath \\wsl$\Ubuntu\home\yaako\projects\whisper-key-yaakov -Variant rocm
+
+3) Build without creating zip:
+
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+cd \\wsl$\Ubuntu\home\yaako\projects\whisper-key-yaakov\tmp
+.\windows-build-portable.ps1 -RepoPath \\wsl$\Ubuntu\home\yaako\projects\whisper-key-yaakov -Variant cuda -NoZip

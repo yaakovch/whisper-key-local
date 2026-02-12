@@ -1,0 +1,37 @@
+# Whisper Key Windows manual test profile
+# Copy this file to:
+#   %APPDATA%\whisperkey\user_settings.yaml
+# Then restart Whisper Key.
+
+whisper:
+  model: small
+  device: cuda
+  compute_type: float16
+  language: auto
+  sync_with_windows_language: true
+  beam_size: 5
+
+hotkey:
+  recording_hotkey: ctrl+win
+  stop_with_modifier_enabled: false
+  auto_enter_enabled: true
+  auto_enter_combination: alt
+  cancel_combination: esc
+
+clipboard:
+  auto_paste: true
+  paste_hotkey: ctrl+v
+  preserve_clipboard: false
+  key_simulation_delay: 0.15
+
+logging:
+  level: INFO
+  file:
+    enabled: true
+    filename: app.log
+  console:
+    enabled: true
+    level: INFO
+
+console:
+  start_hidden: false

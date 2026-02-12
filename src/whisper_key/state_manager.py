@@ -15,6 +15,7 @@ from .audio_feedback import AudioFeedback
 from .console_manager import ConsoleManager
 from .utils import OptionalComponent
 from .voice_activity_detection import VadEvent, VadManager
+from .language_sync import LanguageSelectionDecision, normalize_configured_language, resolve_language_override
 
 class StateManager:
     def __init__(self,
@@ -149,7 +150,11 @@ class StateManager:
 
             self.system_tray.update_state("processing")
 
-            transcribed_text = self.whisper_engine.transcribe_audio(audio_data)
+            language_override = self._resolve_language_override()
+            transcribed_text = self.whisper_engine.transcribe_audio(
+                audio_data,
+                language_override=language_override
+            )
 
             if not transcribed_text:
                 return
@@ -185,6 +190,97 @@ class StateManager:
 
             if not (pending_device or pending_model):
                 self.system_tray.update_state("idle")
+
+    def _resolve_language_override(self) -> Optional[str]:
+        whisper_config = self.config_manager.get_whisper_config()
+        configured_language = whisper_config.get("language", "auto")
+        normalized_configured_language = normalize_configured_language(configured_language)
+        sync_with_windows_language = whisper_config.get("sync_with_windows_language", False)
+        is_windows = platform.system().lower() == "windows"
+
+        detection_result = None
+        detected_language = None
+        detection_reason = None
+
+        should_detect_windows_language = (
+            normalized_configured_language == "auto"
+            and sync_with_windows_language
+            and is_windows
+        )
+
+        if should_detect_windows_language:
+            detection_result = self._detect_windows_language()
+            if detection_result and getattr(detection_result, "success", False):
+                detected_language = detection_result.language_code
+            elif detection_result:
+                detection_reason = detection_result.reason or "windows_layout_detection_failed"
+                if getattr(detection_result, "error", None):
+                    detection_reason = f"{detection_reason}: {detection_result.error}"
+                if getattr(detection_result, "lang_id_hex", None):
+                    detection_reason = f"{detection_reason} ({detection_result.lang_id_hex})"
+            else:
+                detection_reason = "detector_unavailable"
+
+        decision = resolve_language_override(
+            configured_language=configured_language,
+            sync_with_windows_language=sync_with_windows_language,
+            model_key=self.whisper_engine.model_key,
+            model_english_only_hint=self._is_current_model_english_only(),
+            is_windows=is_windows,
+            detected_language=detected_language,
+            detection_reason=detection_reason
+        )
+
+        self._log_language_decision(decision, detection_result)
+        return decision.language_override
+
+    def _detect_windows_language(self):
+        try:
+            from .platform.windows.language import detect_foreground_window_language
+        except Exception as exc:
+            self.logger.warning(f"Windows language sync detector import failed: {exc}")
+            return None
+
+        try:
+            return detect_foreground_window_language()
+        except Exception as exc:
+            self.logger.warning(f"Windows language sync detector execution failed: {exc}")
+            return None
+
+    def _is_current_model_english_only(self) -> bool:
+        model_key = self.whisper_engine.model_key
+        registry = getattr(self.whisper_engine, "registry", None)
+        if registry is None:
+            return False
+
+        model_definition = registry.get_model(model_key)
+        if model_definition is None:
+            return False
+
+        return bool(getattr(model_definition, "english_only", False))
+
+    def _log_language_decision(self,
+                               decision: LanguageSelectionDecision,
+                               detection_result=None):
+        if detection_result and getattr(detection_result, "success", False):
+            lang_id_hex = detection_result.lang_id_hex
+            lang_id_label = f" (LANGID: {lang_id_hex})" if lang_id_hex else ""
+            detection_message = (
+                f"Windows Language Sync detected '{detection_result.language_code}'{lang_id_label}"
+            )
+            self.logger.info(detection_message)
+            print(f"🌐 Windows Language Sync: Using '{detection_result.language_code}'{lang_id_label}")
+
+        if decision.source == "windows_sync_fallback":
+            fallback_message = f"Windows Language Sync fallback to auto ({decision.reason})"
+            self.logger.info(fallback_message)
+            print(f"🌐 {fallback_message}")
+        elif decision.source == "english_model_forced":
+            forced_message = f"English-only model language override applied ({decision.reason})"
+            self.logger.info(forced_message)
+            print("🌐 Language Override: English-only model detected, forcing 'en'")
+        else:
+            self.logger.debug(f"Language override source={decision.source}, reason={decision.reason}")
     
     def get_application_state(self) -> dict:
         status = {

@@ -27,6 +27,12 @@ whisper: # Whisper AI Model Settings
   # Options: auto (auto-detect), en, es, fr, de, etc.
   # Set to specific language code to force language, or auto for auto-detection
   language: auto
+
+  # Windows keyboard layout language sync
+  # If true and language is set to auto, Whisper Key will try to use the
+  # active Windows keyboard layout language for transcription.
+  # Non-Windows platforms silently ignore this setting.
+  sync_with_windows_language: true
   
   # Transcription quality settings
   beam_size: 5  # Higher = more accurate but slower (1-10)
@@ -65,18 +71,22 @@ whisper: # Whisper AI Model Settings
     tiny.en:
       label: "Tiny.En (English, 74MB)"
       group: custom
+      english_only: true
       enabled: true
     base.en:
       label: "Base.En (English, 141MB)"
       group: custom
+      english_only: true
       enabled: true
     small.en:
       label: "Small.En (English, 464MB)"
       group: custom
+      english_only: true
       enabled: true
     medium.en:
       label: "Medium.En (English, 1.5GB)"
       group: custom
+      english_only: true
       enabled: true
 
     # Distilled models — smaller and faster than standard Whisper, English only
@@ -84,16 +94,19 @@ whisper: # Whisper AI Model Settings
       source: Systran/faster-distil-whisper-small.en
       label: "Distil-Small.En (English, 320MB)"
       group: custom
+      english_only: true
       enabled: true
     distil-medium.en:
       source: Systran/faster-distil-whisper-medium.en
       label: "Distil-Medium.En (English, 755MB)"
       group: custom
+      english_only: true
       enabled: true
     distil-large-v3.5: # ~1.5x faster than Large-V3-Turbo with comparable accuracy
       source: distil-whisper/distil-large-v3.5-ct2
       label: "Distil-Large-V3.5 (English, 1.4GB)"
       group: custom
+      english_only: true
       enabled: true
 
 streaming: # Real-time STT (Experimental, speech preview only)
