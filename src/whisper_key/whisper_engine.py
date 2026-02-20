@@ -10,20 +10,19 @@ from faster_whisper import WhisperModel
 
 
 def _register_cuda_dll_paths():
-    if sys.platform != "win32" or not hasattr(os, "add_dll_directory"):
+    if sys.platform != "win32" or getattr(sys, 'frozen', False):
+        return
+    if not hasattr(os, "add_dll_directory"):
         return
     for package in ("nvidia.cublas", "nvidia.cudnn"):
         try:
             mod = __import__(package, fromlist=[""])
-            lib_dir = os.path.join(os.path.dirname(mod.__file__), "lib")
-            if os.path.isdir(lib_dir):
-                os.add_dll_directory(lib_dir)
+            for subdir in ("lib", "bin"):
+                lib_dir = os.path.join(os.path.dirname(mod.__file__), subdir)
+                if os.path.isdir(lib_dir):
+                    os.add_dll_directory(lib_dir)
         except ImportError:
             pass
-    for package_dir in ("nvidia_cublas_cu12", "nvidia_cudnn_cu12"):
-        candidate = os.path.join(sys.prefix, "Lib", "site-packages", package_dir, "lib")
-        if os.path.isdir(candidate):
-            os.add_dll_directory(candidate)
 
 _register_cuda_dll_paths()
 

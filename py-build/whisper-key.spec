@@ -22,10 +22,22 @@ for site_dir in site.getsitepackages():
         ten_vad_data.append((str(ten_vad_lib), 'ten_vad/lib'))
         break
 
+# Bundle CUDA cuBLAS DLLs if available (needed for GPU transcription)
+cublas_binaries = []
+cublas_dlls = ('cublas64_12.dll', 'cublasLt64_12.dll')
+for site_dir in site.getsitepackages():
+    cublas_bin = pathlib.Path(site_dir) / 'nvidia' / 'cublas' / 'bin'
+    if cublas_bin.exists():
+        for dll_name in cublas_dlls:
+            dll_path = cublas_bin / dll_name
+            if dll_path.exists():
+                cublas_binaries.append((str(dll_path), '.'))
+        break
+
 a = Analysis(
     [str(project_root / 'whisper-key.py')],
     pathex=[str(project_root)],
-    binaries=[],
+    binaries=cublas_binaries,
     datas=[
         (str(project_root / 'src' / 'whisper_key' / 'config.defaults.yaml'), '.'),
         (str(project_root / 'src' / 'whisper_key' / 'assets'), 'assets'),
@@ -41,8 +53,9 @@ a = Analysis(
     ],
     hookspath=[],
     hooksconfig={},
-    runtime_hooks=[str(spec_dir / 'hooks' / 'rth_rocm_paths.py')] if build_variant == 'rocm' else [],
-    excludes=[],
+    runtime_hooks=[str(spec_dir / 'hooks' / 'rth_rocm_paths.py')] if build_variant == 'rocm'
+                   else [str(spec_dir / 'hooks' / 'rth_cuda_cublas.py')],
+    excludes=['nvidia', 'nvidia.cublas'],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=None,
@@ -50,7 +63,11 @@ a = Analysis(
 )
 
 # Replace PyInstaller's bundled MSVCP140.dll — its version crashes ctranslate2
-a.binaries = [b for b in a.binaries if b[0].lower() != 'msvcp140.dll']
+# Remove auto-collected nvidia DLLs except the cuBLAS ones we explicitly added
+cublas_keep = {'cublas64_12.dll', 'cublaslt64_12.dll'}
+a.binaries = [b for b in a.binaries
+              if b[0].lower() != 'msvcp140.dll'
+              and ('nvidia' not in b[1].lower() or b[0].lower() in cublas_keep)]
 a.binaries.append(('msvcp140.dll', str(spec_dir / 'force-dll' / 'msvcp140.dll'), 'BINARY'))
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=None)
